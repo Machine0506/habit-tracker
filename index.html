@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>习惯打卡 — Prison Break</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap");
+
+:root {
+  --bg-primary: #0F1116;
+  --bg-card: rgba(25,29,38,0.75);
+  --text-primary: #E8ECF1;
+  --text-secondary: #8892A0;
+  --accent-blue: #2A4060;
+  --accent-green: #297347;
+  --accent-silver: #B8C2D0;
+  --border-glow: rgba(184,194,208,0.15);
+  --shadow-card: 0 8px 32px rgba(0,0,0,0.6);
+  --overlay-dark: rgba(0,0,0,0.4);
+  --hover-lift: translateY(-2px);
+  --checked-line-color: #2A4060;
+  --glass-bg: rgba(25,29,38,0.75);
+  --input-bg: rgba(255,255,255,0.06);
+  --scrollbar-bg: rgba(184,194,208,0.08);
+  --scrollbar-thumb: rgba(184,194,208,0.25);
+  --btn-add-bg: rgba(0,0,0,0.7);
+  --btn-add-hover: rgba(0,0,0,0.9);
+  --streak-color: #B8C2D0;
+}
+
+.light {
+  --bg-primary: #E8ECF1;
+  --bg-card: rgba(230,234,242,0.82);
+  --text-primary: #1A1D26;
+  --text-secondary: #5A6476;
+  --accent-blue: #3A5A80;
+  --accent-green: #2D8A4F;
+  --accent-silver: #7A8496;
+  --border-glow: rgba(42,64,96,0.15);
+  --shadow-card: 0 8px 32px rgba(0,0,0,0.15);
+  --overlay-dark: rgba(255,255,255,0.15);
+  --hover-lift: translateY(-2px);
+  --checked-line-color: #3A5A80;
+  --glass-bg: rgba(230,234,242,0.82);
+  --input-bg: rgba(0,0,0,0.05);
+  --scrollbar-bg: rgba(42,64,96,0.08);
+  --scrollbar-thumb: rgba(42,64,96,0.2);
+  --btn-add-bg: rgba(42,64,96,0.8);
+  --btn-add-hover: rgba(42,64,96,1);
+  --streak-color: #2A4060;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Inter", -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.5s ease, color 0.5s ease;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-bg); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+.light-sweep {
+  position: absolute; inset: 0;
+  overflow: hidden; pointer-events: none;
+  border-radius: inherit; z-index: 1;
+}
+.light-sweep::after {
+  content: "";
+  position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(184,194,208,0.06) 50%, transparent 100%);
+  animation: sweep 12s ease-in-out infinite;
+}
+@keyframes sweep {
+  0%, 100% { left: -60%; }
+  50% { left: 160%; }
+}
+
+.title-serif { font-family: "Playfair Display", Georgia, serif; }
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--border-glow);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s ease;
+}
+
+.banner-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center 30%;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+.banner-bg.fallback {
+  background: linear-gradient(135deg, #0F1116 0%, #1a2030 40%, #2A4060 100%) !important;
+}
+
+.checkbox-box {
+  width: 26px; height: 26px; min-width: 26px;
+  border: 1.5px solid rgba(184,194,208,0.3);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s ease;
+  background: transparent;
+}
+.checkbox-box:hover {
+  border-color: var(--accent-silver);
+  box-shadow: 0 0 8px rgba(184,194,208,0.15);
+}
+.checkbox-box.checked {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(41,115,71,0.25);
+}
+.checkbox-box.checked svg { opacity: 1; transform: scale(1); }
+.checkbox-box svg {
+  opacity: 0; transform: scale(0.6);
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.habit-item { transition: all 0.3s ease; cursor: default; }
+.habit-item:hover {
+  transform: var(--hover-lift);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.habit-item .habit-text { transition: all 0.35s ease; }
+.habit-item.done .habit-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+  text-decoration-color: var(--checked-line-color);
+  text-decoration-thickness: 1.5px;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.habit-item.entering { animation: fadeSlideIn 0.35s ease forwards; }
+.habit-del-btn {
+  opacity: 0;
+  width: 24px; height: 24px; min-width: 24px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  color: rgba(200,100,100,0.5);
+  font-size: 0.85rem;
+  margin-right: 4px;
+}
+.habit-item:hover .habit-del-btn {
+  opacity: 0.7;
+}
+.habit-del-btn:hover {
+  opacity: 1 !important;
+  background: rgba(180,60,60,0.15);
+  color: rgba(200,100,100,0.9);
+}
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+  padding: 20px;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+.modal-content {
+  max-width: 640px; width: 100%;
+  max-height: 85vh;
+  transform: scale(0.92) translateY(20px);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+  position: relative;
+  border-radius: 16px;
+}
+
+.journal-modal-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  background-repeat: no-repeat; z-index: 0;
+}
+.journal-modal-bg.fallback {
+  background: linear-gradient(135deg, #0F1116 0%, #1a1f2a 50%, #2a3038 100%) !important;
+}
+
+.btn-metal {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(184,194,208,0.15);
+  color: var(--text-primary);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.btn-metal:hover {
+  background: rgba(0,0,0,0.7);
+  border-color: rgba(184,194,208,0.3);
+  transform: translateY(-1px);
+}
+.btn-metal.danger:hover {
+  border-color: rgba(180,60,60,0.5);
+  background: rgba(180,60,60,0.15);
+}
+
+.theme-toggle {
+  cursor: pointer; transition: all 0.3s ease;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(184,194,208,0.1);
+}
+.theme-toggle:hover { background: rgba(0,0,0,0.5); transform: rotate(30deg); }
+
+.streak-number { color: var(--streak-color); font-weight: 700; }
+
+.history-item {
+  border-left: 2px solid var(--border-glow);
+  padding-left: 16px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s ease;
+}
+.history-item:hover { border-left-color: var(--accent-silver); }
+.history-date-header {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;
+}
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer;
+  transition: all 0.25s ease; position: relative;
+  font-size: 0.85rem; font-weight: 500;
+  border: 1px solid transparent;
+  min-height: 48px;
+}
+.calendar-day:hover {
+  background: rgba(184,194,208,0.1);
+  border-color: var(--border-glow);
+  transform: scale(1.05);
+}
+.calendar-day.today {
+  border-color: var(--accent-silver);
+  box-shadow: 0 0 12px rgba(184,194,208,0.15);
+}
+.calendar-day .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+.calendar-day .dot.green { background: var(--accent-green); }
+.calendar-day .dot.blue { background: var(--accent-blue); }
+.calendar-nav-btn {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border-glow);
+  color: var(--accent-silver);
+  cursor: pointer; border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  transition: all 0.25s ease;
+}
+.calendar-nav-btn:hover {
+  background: rgba(184,194,208,0.1);
+  transform: scale(1.05);
+}
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  padding: 4px 0;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.day-detail-habit-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  transition: all 0.25s ease;
+}
+.day-detail-habit-item:hover {
+  background: rgba(184,194,208,0.05);
+}
+.day-detail-habit-item .dd-check {
+  width: 20px; height: 20px; min-width: 20px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.25s ease;
+}
+.day-detail-habit-item .dd-check.done {
+  background: var(--accent-green);
+  color: white;
+}
+.day-detail-habit-item .dd-check.pending {
+  border: 1.5px solid rgba(184,194,208,0.3);
+}
+.day-detail-journal-box {
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-glow);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 768px) {
+  .banner-card { padding: 24px 20px !important; }
+  .banner-card h1 { font-size: 1.8rem !important; }
+  .banner-card .prefix { font-size: 0.75rem !important; }
+  .banner-card .subtitle { font-size: 0.7rem !important; }
+  .banner-card .streak-text { font-size: 0.8rem !important; }
+  .stats-box { padding: 6px 14px !important; font-size: 0.75rem !important; }
+  .list-module { padding: 16px !important; }
+  .list-module .module-title { font-size: 0.85rem !important; }
+  .journal-card { padding: 18px !important; }
+  .journal-card .journal-text { font-size: 0.85rem !important; }
+  .habit-item { padding: 12px 14px !important; }
+  .habit-item .habit-text { font-size: 0.85rem !important; }
+  .checkbox-box { width: 22px; height: 22px; min-width: 22px; }
+  .add-inline-input { width: 100px !important; font-size: 0.75rem !important; }
+  .add-inline-btn { font-size: 0.75rem !important; padding: 5px 12px !important; }
+  .modal-content { max-width: 95vw; }
+  .modal-content textarea { font-size: 0.85rem !important; }
+  .banner-card .btn-round { width: 38px !important; height: 38px !important; font-size: 1.2rem !important; }
+}
+@media (max-width: 480px) {
+  .banner-card { padding: 18px 14px !important; }
+  .banner-card h1 { font-size: 1.4rem !important; }
+  .stats-box { padding: 4px 10px !important; font-size: 0.65rem !important; }
+  .add-inline-input { width: 80px !important; }
+  .list-module { padding: 12px !important; }
+  .habit-item { padding: 10px 12px !important; }
+  .theme-toggle { width: 32px; height: 32px; }
+  .theme-toggle svg { width: 16px; height: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app" class="relative z-10 min-h-screen flex flex-col items-center px-4 py-4 md:px-6 md:py-6 max-w-3xl mx-auto gap-4">
+
+  <!-- ===== LAYER 1: BANNER ===== -->
+  <div class="banner-card glass w-full rounded-2xl p-6 md:p-8 relative" style="min-height:200px;">
+    <div class="light-sweep"></div>
+    <div id="bannerBg" class="banner-bg rounded-2xl" style="background-image:url('https://duk.tw/649BwF.png');"></div>
+    <div class="absolute inset-0 rounded-2xl z-[1]" style="background:rgba(0,0,0,0.4);"></div>
+
+    <div class="relative z-[2] flex flex-col h-full min-h-[160px]">
+      <!-- Top row -->
+      <div class="flex items-start justify-between mb-3">
+        <div class="stats-box rounded-lg px-4 py-2 text-sm" style="background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); border:1px solid rgba(184,194,208,0.1);">
+          <span style="color:var(--accent-silver);">今天已完成 </span>
+          <span id="statsDone" class="font-semibold text-white">0</span>
+          <span style="color:var(--accent-silver);">/</span>
+          <span id="statsTotal" class="font-semibold text-white">0</span>
+          <span style="color:var(--accent-silver);"> 项</span>
+        </div>
+        <div id="themeToggle" class="theme-toggle" title="切换主题">
+          <svg class="w-5 h-5" style="color:var(--accent-silver);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-14.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 8.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="flex-1 flex flex-col justify-center">
+        <p class="prefix text-xs md:text-sm tracking-widest uppercase" style="color:var(--accent-silver); letter-spacing:3px;">每日小目标</p>
+        <h1 class="title-serif text-3xl md:text-5xl font-black mt-1" style="color:#F0F4FA; text-shadow:0 0 20px rgba(184,194,208,0.3), 0 2px 4px rgba(0,0,0,0.5);">习惯打卡</h1>
+        <p class="streak-text text-sm mt-1" style="color:var(--accent-silver);">今日坚持第 <span id="streakDays" class="streak-number">0</span> 天</p>
+        <p class="subtitle text-xs mt-2 opacity-70" style="color:var(--accent-silver); max-width:380px;">把想坚持的事放在这里，完成一项就轻轻打个勾</p>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="flex items-center justify-between mt-3">
+        <button id="historyBtn" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style="background:rgba(0,0,0,0.3); border:1px solid rgba(184,194,208,0.1); color:var(--accent-silver); cursor:pointer; transition:all 0.25s ease;">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          历史记录
+        </button>
+        <button id="quickAddBtn" class="btn-round w-[44px] h-[44px] rounded-full flex items-center justify-center text-xl" style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:white; cursor:pointer; transition:all 0.25s ease;">
+          +
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAYER 2: HABIT LIST ===== -->
+  <div class="list-module glass w-full rounded-2xl p-4 md:p-6 relative" style="flex:1; min-height:0;">
+    <div class="banner-bg rounded-2xl" style="background-image:url('https://duk.tw/Nu2x7v.png'); background-size:cover; background-position:center; background-repeat:no-repeat; position:absolute; inset:0; z-index:0;"></div>
+    <div class="light-sweep"></div>
+
+    <div class="relative z-[2] flex flex-wrap items-center justify-between gap-2 mb-3">
+      <span class="module-title text-sm font-semibold tracking-wide" style="color:var(--accent-silver);">今日习惯</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="displayDate" class="text-xs" style="color:var(--text-secondary);"></span>
+        <input id="newHabitInput" class="add-inline-input rounded-lg px-3 py-1.5 text-sm" style="background:var(--input-bg); border:1px solid var(--border-glow); color:var(--text-primary); outline:none; width:140px;" placeholder="输入习惯..." maxlength="60">
+        <button id="addHabitBtn" class="add-inline-btn rounded-lg px-4 py-1.5 text-sm font-medium" style="background:var(--btn-add-bg); border:1px solid rgba(184,194,208,0.12); color:var(--accent-silver); cursor:pointer; transition:all 0.25s ease;">添加</button>
+      </div>
+    </div>
+
+    <div class="relative z-[2]" style="max-height:340px; overflow-y:auto; padding-right:4px;">
+      <div id="habitList" class="flex flex-col gap-2 min-h-[80px]">
+        <div id="emptyState" class="flex items-center justify-center py-8">
+          <p class="text-sm" style="color:var(--text-secondary);">还没有习惯。先添加一个今天想完成的小目标吧。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAYER 3: JOURNAL ===== -->
+  <div id="journalTrigger" class="journal-card glass w-full rounded-2xl p-5 md:p-6 relative cursor-pointer" style="transition:all 0.3s ease;">
+    <div class="banner-bg rounded-2xl" style="background-image:url('https://duk.tw/6XPeYP.png'); background-size:cover; background-position:center; background-repeat:no-repeat; position:absolute; inset:0; z-index:0;"></div>
+    <div class="light-sweep"></div>
+    <div class="relative z-[2] flex items-center gap-3">
+      <svg class="w-5 h-5" style="color:var(--accent-silver);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+      </svg>
+      <div>
+        <p class="journal-text text-sm font-medium" style="color:var(--accent-silver);">点击记录今日感悟</p>
+        <p id="journalPreview" class="text-xs mt-0.5 opacity-60" style="color:var(--text-secondary);"></p>
+      </div>
+      <svg class="ml-auto w-4 h-4" style="color:var(--text-secondary);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9L12 12.75 8.25 9" />
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: JOURNAL ===== -->
+<div id="journalModal" class="modal-overlay journal-modal-overlay">
+  <div class="modal-content glass" style="overflow:hidden;">
+    <div id="journalModalBg" class="journal-modal-bg rounded-2xl" style="background-image:url('https://duk.tw/JWAfaw.jpg');"></div>
+    <div class="absolute inset-0 rounded-2xl z-[1]" style="background:rgba(10,14,20,0.5);"></div>
+    <div class="relative z-[2] p-5 md:p-6 flex flex-col" style="min-height:340px;">
+      <h3 class="title-serif text-xl font-bold mb-1" style="color:var(--accent-silver);">每日感悟</h3>
+      <p id="journalModalDate" class="text-xs mb-4" style="color:var(--text-secondary);"></p>
+      <textarea id="journalTextarea" class="w-full flex-1 rounded-xl p-4 text-sm resize-none" style="min-height:180px; background:rgba(0,0,0,0.35); border:1px solid var(--border-glow); color:var(--text-primary); outline:none; backdrop-filter:blur(4px);" placeholder="写下今天的想法与感悟"></textarea>
+      <div class="flex flex-wrap gap-2 mt-4 justify-end">
+        <button id="journalSaveBtn" class="btn-metal">保存修改</button>
+        <button id="journalClearBtn" class="btn-metal">清空内容</button>
+        <button id="journalDeleteBtn" class="btn-metal danger">删除本条</button>
+        <button id="translateBtn" class="btn-metal" style="background:rgba(41,115,71,0.3); border:1px solid rgba(41,115,71,0.4);">🌐 转英语</button>
+        <button id="journalCloseBtn" class="btn-metal" style="background:rgba(184,194,208,0.1);">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: HISTORY (CALENDAR) ===== -->
+<div id="historyModal" class="modal-overlay">
+  <div class="modal-content glass p-5 md:p-6 overflow-y-auto" style="max-width:750px;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="title-serif text-xl font-bold" style="color:var(--accent-silver);">历史记录</h3>
+      <div class="flex items-center gap-2">
+        <button id="calendarTodayBtn" class="calendar-nav-btn" title="today">今天</button>
+        <button id="historyCloseBtn" class="btn-metal text-xs">关闭</button>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mb-3">
+      <button id="calendarPrevBtn" class="calendar-nav-btn">← 上月</button>
+      <span id="calendarTitle" class="title-serif text-base font-bold" style="color:var(--accent-silver);"></span>
+      <button id="calendarNextBtn" class="calendar-nav-btn">下月 →</button>
+    </div>
+    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+    <div class="flex gap-4 mt-3 pt-2" style="border-top:1px solid var(--border-glow);">
+      <span class="text-xs" style="color:var(--text-secondary);"><span class="inline-block w-2 h-2 rounded-full bg-green-600 mr-1"></span>全部完成</span>
+      <span class="text-xs" style="color:var(--text-secondary);"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:var(--accent-blue);"></span>部分完成</span>
+      <span class="text-xs" style="color:var(--text-secondary);"><span class="inline-block border rounded-full w-2 h-2 mr-1" style="border-color:var(--border-glow);"></span>有感悟</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: DAY DETAIL ===== -->
+<div id="dayDetailModal" class="modal-overlay">
+  <div class="modal-content glass p-5 md:p-6 overflow-y-auto" style="max-width:560px;">
+    <div class="flex items-center justify-between mb-5">
+      <h3 id="dayDetailDate" class="title-serif text-xl font-bold" style="color:var(--accent-silver);"></h3>
+      <div class="flex items-center gap-2">
+        <button id="dayDetailBackBtn" class="calendar-nav-btn">← 返回</button>
+        <button id="dayDetailCloseBtn" class="btn-metal text-xs">关闭</button>
+      </div>
+    </div>
+    <div id="dayDetailContent"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+"use strict";
+
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const bannerBg = $("#bannerBg");
+const journalModalBg = $("#journalModalBg");
+const statsDone = $("#statsDone");
+const statsTotal = $("#statsTotal");
+const streakDays = $("#streakDays");
+const displayDate = $("#displayDate");
+const habitList = $("#habitList");
+const emptyState = $("#emptyState");
+const newHabitInput = $("#newHabitInput");
+const addHabitBtn = $("#addHabitBtn");
+const quickAddBtn = $("#quickAddBtn");
+const journalTrigger = $("#journalTrigger");
+const journalPreview = $("#journalPreview");
+const journalModal = $("#journalModal");
+const journalTextarea = $("#journalTextarea");
+const journalModalDate = $("#journalModalDate");
+const journalSaveBtn = $("#journalSaveBtn");
+const journalClearBtn = $("#journalClearBtn");
+const journalDeleteBtn = $("#journalDeleteBtn");
+const journalCloseBtn = $("#journalCloseBtn");
+const themeToggle = $("#themeToggle");
+const historyBtn = $("#historyBtn");
+const historyModal = $("#historyModal");
+const historyList = $("#historyList");
+const historyCloseBtn = $("#historyCloseBtn");
+const calendarGrid = document.querySelector("#calendarGrid");
+const calendarTitle = document.querySelector("#calendarTitle");
+const calendarPrevBtn = document.querySelector("#calendarPrevBtn");
+const calendarNextBtn = document.querySelector("#calendarNextBtn");
+const calendarTodayBtn = document.querySelector("#calendarTodayBtn");
+const dayDetailModal = document.querySelector("#dayDetailModal");
+const dayDetailDate = document.querySelector("#dayDetailDate");
+const dayDetailContent = document.querySelector("#dayDetailContent");
+const dayDetailBackBtn = document.querySelector("#dayDetailBackBtn");
+const dayDetailCloseBtn = document.querySelector("#dayDetailCloseBtn");
+
+const STORAGE_KEY = "prison_habit_data";
+const THEME_KEY = "prison_habit_theme";
+
+function getTodayKey() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function formatDateLabel(key) {
+  const d = new Date(key + "T00:00:00");
+  const weekdays = ["日","一","二","三","四","五","六"];
+  return parseInt(key.split("-")[1]) + "月" + parseInt(key.split("-")[2]) + "日 周" + weekdays[d.getDay()];
+}
+
+function loadAllData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveAllData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function getTodayData() {
+  const all = loadAllData();
+  const key = getTodayKey();
+  if (!all[key]) all[key] = { habits: [], journal: "" };
+  return { all, key, data: all[key] };
+}
+
+function calcStreak(all, todayKey) {
+  let streak = 0;
+  const d = new Date(todayKey + "T00:00:00");
+  let checked = false;
+  for (let i = 0; i < 365; i++) {
+    const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    const dayData = all[key];
+    if (dayData && dayData.habits && dayData.habits.length > 0) {
+      const doneCount = dayData.habits.filter(h => h.done).length;
+      if (doneCount > 0) { streak++; d.setDate(d.getDate() - 1); checked = true; }
+      else break;
+    } else {
+      if (key === todayKey) break;
+      if (checked) break;
+      break;
+    }
+  }
+  return streak;
+}
+
+function render() {
+  const { all, key, data } = getTodayData();
+  const total = data.habits.length;
+  const done = data.habits.filter(h => h.done).length;
+  statsDone.textContent = done;
+  statsTotal.textContent = total;
+  streakDays.textContent = calcStreak(all, key);
+  displayDate.textContent = formatDateLabel(key);
+
+  habitList.querySelectorAll(".habit-item").forEach(el => el.remove());
+
+  if (total === 0) {
+    emptyState.style.display = "flex";
+  } else {
+    emptyState.style.display = "none";
+    data.habits.forEach((habit, idx) => {
+      const div = document.createElement("div");
+      div.className = "habit-item flex items-center justify-between rounded-xl px-4 py-3 entering" + (habit.done ? " done" : "");
+      div.style.background = "rgba(0,0,0,0.15)";
+      div.style.border = "1px solid rgba(184,194,208,0.06)";
+      div.dataset.index = idx;
+
+      const textSpan = document.createElement("span");
+      textSpan.className = "habit-text text-sm flex-1 mr-3";
+      textSpan.textContent = habit.name;
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "habit-del-btn";
+      delBtn.innerHTML = "✕";
+      delBtn.title = "删除此习惯";
+      delBtn.addEventListener("click", (e) => { e.stopPropagation(); deleteHabit(idx); });
+
+      const checkBox = document.createElement("div");
+      checkBox.className = "checkbox-box" + (habit.done ? " checked" : "");
+      checkBox.innerHTML = '<svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
+      checkBox.addEventListener("click", (e) => { e.stopPropagation(); toggleHabit(idx); });
+
+      div.appendChild(delBtn);
+      div.appendChild(textSpan);
+      div.appendChild(checkBox);
+      habitList.appendChild(div);
+    });
+  }
+
+  if (data.journal && data.journal.trim()) {
+    const p = data.journal.trim().substring(0, 60);
+    journalPreview.textContent = p + (data.journal.trim().length > 60 ? "..." : "");
+  } else {
+    journalPreview.textContent = "";
+  }
+}
+
+function toggleHabit(idx) {
+  const { all, key, data } = getTodayData();
+  if (data.habits[idx]) {
+    data.habits[idx].done = !data.habits[idx].done;
+    all[key] = data;
+    saveAllData(all);
+    render();
+  }
+}
+function deleteHabit(idx) {
+  if (!confirm("确定删除这个习惯？")) return;
+  const { all, key, data } = getTodayData();
+  data.habits.splice(idx, 1);
+  all[key] = data;
+  saveAllData(all);
+  render();
+}
+
+function addHabit(name) {
+  name = name.trim();
+  if (!name) return;
+  const { all, key, data } = getTodayData();
+  data.habits.push({ name, done: false });
+  all[key] = data;
+  saveAllData(all);
+  render();
+  const container = habitList.parentElement;
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+}
+
+function openJournalModal() {
+  const { key, data } = getTodayData();
+  journalModalDate.textContent = formatDateLabel(key);
+  journalTextarea.value = data.journal || "";
+  journalModal.classList.add("active");
+  setTimeout(() => journalTextarea.focus(), 200);
+}
+function closeJournalModal() { journalModal.classList.remove("active"); }
+function saveJournal() {
+  const { all, key, data } = getTodayData();
+  data.journal = journalTextarea.value.trim();
+  all[key] = data;
+  saveAllData(all);
+  render();
+  closeJournalModal();
+}
+function clearJournal() { journalTextarea.value = ""; }
+function deleteJournal() {
+  if (!confirm("确定删除今日感悟？")) return;
+  const { all, key, data } = getTodayData();
+  data.journal = "";
+  all[key] = data;
+  saveAllData(all);
+  render();
+  closeJournalModal();
+}
+
+function getTheme() { return localStorage.getItem(THEME_KEY) || "dark"; }
+function setTheme(t) {
+  const html = document.documentElement;
+  if (t === "light") { html.classList.remove("dark"); html.classList.add("light"); }
+  else { html.classList.remove("light"); html.classList.add("dark"); }
+  localStorage.setItem(THEME_KEY, t);
+  const svg = themeToggle.querySelector("svg");
+  if (t === "light") {
+    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />';
+  } else {
+    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-14.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 8.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+  }
+}
+function toggleTheme() { setTheme(getTheme() === "dark" ? "light" : "dark"); }
+
+let calendarYear, calendarMonth;
+
+function initCalendar() {
+  var now = new Date();
+  calendarYear = now.getFullYear();
+  calendarMonth = now.getMonth();
+}
+
+function renderCalendar() {
+  var all = JSON.parse(localStorage.getItem("prison_habit_data") || "{}");
+  var grid = calendarGrid;
+  var title = calendarTitle;
+  
+  title.textContent = calendarYear + "年 " + (calendarMonth + 1) + "月";
+  
+  var dayHeaders = ["日","一","二","三","四","五","六"];
+  var firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  var daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  var today = new Date();
+  var todayStr = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
+  
+  var html = "";
+  
+  dayHeaders.forEach(function(d) {
+    html += "<div class=\"calendar-weekday\">" + d + "</div>";
+  });
+  
+  for (var i = 0; i < firstDay; i++) {
+    html += "<div></div>";
+  }
+  
+  for (var day = 1; day <= daysInMonth; day++) {
+    var dateStr = calendarYear + "-" + String(calendarMonth+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    var dayData = all[dateStr];
+    var isToday = dateStr === todayStr;
+    
+    var cellClass = "calendar-day";
+    if (isToday) cellClass += " today";
+    
+    var bgStyle = "";
+    var dotHtml = "";
+    
+    if (dayData) {
+      var habits = dayData.habits || [];
+      var hasJournal = dayData.journal && dayData.journal.trim();
+      var total = habits.length;
+      var done = habits.filter(function(h) { return h.done; }).length;
+      
+      if (total > 0 && done === total) {
+        bgStyle = "background:rgba(41,115,71,0.15);";
+        if (hasJournal) dotHtml = "<span class=\"dot green\"></span>";
+      } else if (total > 0) {
+        bgStyle = "background:rgba(42,64,96,0.15);";
+        if (hasJournal) dotHtml = "<span class=\"dot blue\"></span>";
+      } else if (hasJournal) {
+        dotHtml = "<span class=\"dot\" style=\"background:var(--accent-silver);\"></span>";
+      }
+    }
+    
+    html += "<div class=\"" + cellClass + "\" data-date=\"" + dateStr + "\" style=\"" + bgStyle + "\">";
+    html += "<span>" + day + "</span>";
+    if (dotHtml) html += dotHtml;
+    html += "</div>";
+  }
+  
+  grid.innerHTML = html;
+  
+  grid.querySelectorAll(".calendar-day").forEach(function(el) {
+    el.addEventListener("click", function() {
+      openDayDetail(this.dataset.date);
+    });
+  });
+}
+
+function openHistoryModal() {
+  if (calendarYear === undefined) initCalendar();
+  renderCalendar();
+  document.querySelector("#historyModal").classList.add("active");
+}
+
+function closeHistoryModal() { document.querySelector("#historyModal").classList.remove("active"); }
+
+function openDayDetail(dateStr) {
+  var all = JSON.parse(localStorage.getItem("prison_habit_data") || "{}");
+  var dayData = all[dateStr];
+  
+  dayDetailDate.textContent = formatDateLabel(dateStr);
+  dayDetailContent.innerHTML = "";
+  
+  if (!dayData) {
+    dayDetailContent.innerHTML = "<p class=\"text-sm\" style=\"color:var(--text-secondary);\">该日无记录。</p>";
+    dayDetailModal.classList.add("active");
+    return;
+  }
+  
+  var habits = dayData.habits || [];
+  var journal = dayData.journal || "";
+  var html = "";
+  
+  if (habits.length > 0) {
+    html += "<h4 class=\"text-sm font-semibold mb-2\" style=\"color:var(--accent-silver);\">习惯列表</h4>";
+    html += "<div class=\"mb-4\">";
+    habits.forEach(function(h) {
+      html += "<div class=\"day-detail-habit-item\">";
+      html += "<div class=\"dd-check " + (h.done ? "done" : "pending") + "\">" + (h.done ? "\u2713" : "") + "</div>";
+      html += "<span class=\"text-sm " + (h.done ? "line-through opacity-60" : "") + "\" style=\"color:var(--text-primary);\">" + h.name + "</span>";
+      html += "</div>";
+    });
+    html += "</div>";
+  } else {
+    html += "<p class=\"text-xs mb-3\" style=\"color:var(--text-secondary); opacity:0.6;\">无习惯记录</p>";
+  }
+  
+  html += "<h4 class=\"text-sm font-semibold mb-2\" style=\"color:var(--accent-silver);\">每日感悟</h4>";
+  if (journal.trim()) {
+    html += "<div class=\"day-detail-journal-box\">" + journal.trim() + "</div>";
+  } else {
+    html += "<p class=\"text-xs\" style=\"color:var(--text-secondary); opacity:0.6;\">无感悟记录</p>";
+  }
+  
+  html += "<div class=\"mt-4 pt-3\" style=\"border-top:1px solid var(--border-glow);\">";
+  html += "<button id=\"dayDetailDeleteBtn\" class=\"text-xs rounded px-3 py-1\" style=\"background:rgba(180,60,60,0.12); border:1px solid rgba(180,60,60,0.2); color:rgba(200,100,100,0.9); cursor:pointer; transition:all 0.25s ease;\">删除当天记录</button>";
+  html += "</div>";
+  
+  dayDetailContent.innerHTML = html;
+  dayDetailModal.classList.add("active");
+  
+  var delBtn = document.getElementById("dayDetailDeleteBtn");
+  if (delBtn) {
+    delBtn.addEventListener("click", function() {
+      if (confirm("确定删除 " + formatDateLabel(dateStr) + " 的全部数据？")) {
+        var all2 = JSON.parse(localStorage.getItem("prison_habit_data") || "{}");
+        delete all2[dateStr];
+        localStorage.setItem("prison_habit_data", JSON.stringify(all2));
+        closeDayDetail();
+        renderCalendar();
+        render();
+      }
+    });
+  }
+}
+
+function closeDayDetail() { dayDetailModal.classList.remove("active"); }
+
+function hasChinese(text) {
+  return /[\u4e00-\u9fff]/.test(text);
+}
+
+// Extract Chinese text segments, translate only those
+function extractChinese(text) {
+  var parts = [];
+  var chunk = "";
+  for (var i = 0; i < text.length; i++) {
+    if (/[\u4e00-\u9fff]/.test(text[i])) {
+      chunk += text[i];
+    } else {
+      if (chunk) { parts.push(chunk); chunk = ""; }
+    }
+  }
+  if (chunk) parts.push(chunk);
+  return parts;
+}
+
+function translateText() {
+  var text = document.querySelector("#journalTextarea").value.trim();
+  if (!text) { alert("请先输入内容再翻译。"); return; }
+  
+  if (!hasChinese(text)) {
+    alert("没有检测到中文内容，无需翻译。");
+    return;
+  }
+  
+  var btn = document.getElementById("translateBtn");
+  var origText = btn.textContent;
+  btn.textContent = "⏳ 翻译中...";
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+  
+  // Only send the Chinese parts to reduce text length
+  var chineseParts = extractChinese(text);
+  var queryText = chineseParts.join("\n");
+  
+  var url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(queryText) + "&langpair=zh-CN|en-US";
+  
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.responseStatus === 200) {
+        var translatedParts = data.responseData.translatedText.split("\n");
+        
+        // Replace each Chinese segment with its translation in the original text
+        var result = text;
+        for (var i = 0; i < chineseParts.length; i++) {
+          result = result.replace(chineseParts[i], translatedParts[i] || "");
+        }
+        
+        document.querySelector("#journalTextarea").value = result;
+        btn.textContent = "✅ 已翻译";
+        setTimeout(function() {
+          btn.textContent = origText;
+          btn.disabled = false;
+          btn.style.opacity = "1";
+        }, 2000);
+      } else if (data.responseStatus === 429) {
+        alert("翻译接口请求太频繁了，休息一分钟再试试。");
+        btn.textContent = origText;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      } else {
+        alert("翻译失败（状态码: " + data.responseStatus + "），请稍后重试。");
+        btn.textContent = origText;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      }
+    })
+    .catch(function() {
+      alert("翻译请求失败，请检查网络或刷新页面重试。");
+      btn.textContent = origText;
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    });
+}
+
+function setupImageFallbacks() {
+  var bgStr = bannerBg.style.backgroundImage;
+  var url = bgStr.replace(/url\(['"]?(.*?)['"]?\)/, "$1").trim();
+  if (url && url !== "none") {
+    var img = new Image();
+    img.onerror = function() { bannerBg.classList.add("fallback"); };
+    img.src = url;
+  }
+  var bgStr2 = journalModalBg.style.backgroundImage;
+  var url2 = bgStr2.replace(/url\(['"]?(.*?)['"]?\)/, "$1").trim();
+  if (url2 && url2 !== "none") {
+    var img2 = new Image();
+    img2.onerror = function() { journalModalBg.classList.add("fallback"); };
+    img2.src = url2;
+  }
+}
+
+function quickAdd() {
+  var name = prompt("输入新习惯：");
+  if (name && name.trim()) addHabit(name.trim());
+}
+
+function init() {
+  setTheme(getTheme());
+  render();
+  addHabitBtn.addEventListener("click", function() {
+    var val = newHabitInput.value.trim();
+    if (val) { addHabit(val); newHabitInput.value = ""; }
+  });
+  newHabitInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      var val = newHabitInput.value.trim();
+      if (val) { addHabit(val); newHabitInput.value = ""; }
+    }
+  });
+  quickAddBtn.addEventListener("click", quickAdd);
+  journalTrigger.addEventListener("click", openJournalModal);
+  journalSaveBtn.addEventListener("click", saveJournal);
+  journalClearBtn.addEventListener("click", clearJournal);
+  journalDeleteBtn.addEventListener("click", deleteJournal);
+  journalCloseBtn.addEventListener("click", closeJournalModal);
+  journalModal.addEventListener("click", function(e) { if (e.target === journalModal) closeJournalModal(); });
+  themeToggle.addEventListener("click", toggleTheme);
+  historyBtn.addEventListener("click", openHistoryModal);
+  var translateBtn = document.getElementById("translateBtn");
+  translateBtn.addEventListener("click", translateText);
+  calendarPrevBtn.addEventListener("click", function() { calendarMonth--; if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; } renderCalendar(); });
+  calendarNextBtn.addEventListener("click", function() { calendarMonth++; if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; } renderCalendar(); });
+  calendarTodayBtn.addEventListener("click", function() { initCalendar(); renderCalendar(); });
+  dayDetailBackBtn.addEventListener("click", closeDayDetail);
+  dayDetailCloseBtn.addEventListener("click", closeDayDetail);
+  dayDetailModal.addEventListener("click", function(e) { if (e.target === dayDetailModal) closeDayDetail(); });
+  historyCloseBtn.addEventListener("click", closeHistoryModal);
+  historyModal.addEventListener("click", function(e) { if (e.target === historyModal) closeHistoryModal(); });
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      if (journalModal.classList.contains("active")) closeJournalModal();
+      if (historyModal.classList.contains("active")) closeHistoryModal();
+      if (dayDetailModal.classList.contains("active")) closeDayDetail();
+    }
+  });
+  setupImageFallbacks();
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+else init();
+
+})();
+</script>
+</body>
+</html>
+
